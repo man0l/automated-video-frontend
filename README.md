@@ -5,3 +5,6 @@ This is the frontend part of the automation video workwlow. I have created it on
 # Run it
 
 `npm run dev`
+
+# Components
+FileList
