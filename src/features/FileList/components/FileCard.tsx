@@ -4,18 +4,25 @@ import Modal from '../../../components/Modal';
 import { ClipLoader } from 'react-spinners';
 import './FileCard.scss';
 
-interface FileCardProps {
-  file: {
-    id: number;
-    name: string;
-    url: string;
-    type: string;
-    date: string;
-    thumbnail: string | null;
-  };
+interface File {
+  id: number;
+  name: string;
+  url: string;
+  type: 'text' | 'video' | 'audio';
+  date: string;
+  thumbnail: string | null;
 }
 
-const FileCard: React.FC<FileCardProps> = ({ file }) => {
+interface FileCardProps {
+  file: File;
+  isSelected: boolean;
+  isSelectionMode: boolean;
+  onSelect: (file: File) => void;
+  onDeselect: (file: File) => void;
+  canSelect: boolean; // New prop to determine if the file can be selected
+}
+
+const FileCard: React.FC<FileCardProps> = ({ file, isSelected, isSelectionMode, onSelect, onDeselect, canSelect }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -60,13 +67,30 @@ const FileCard: React.FC<FileCardProps> = ({ file }) => {
     }
   };
 
+  const handleCheckboxChange = () => {
+    if (isSelected) {
+      onDeselect(file);
+    } else {
+      onSelect(file);
+    }
+  };
+
   const handlePreviewClick = () => {
     setIsLoading(true);
     setIsModalOpen(true);
   };
 
   return (
-    <div className="file-card p-4 bg-white shadow-md rounded-lg">
+    <div className={`file-card p-4 bg-white shadow-md rounded-lg ${isSelected ? 'border-2 border-blue-500' : ''} ${!canSelect && !isSelected ? 'not-selectable' : ''}`}>
+      {isSelectionMode && (
+        <input
+          type="checkbox"
+          checked={isSelected}
+          onChange={handleCheckboxChange}
+          disabled={!canSelect && !isSelected} // Disable checkbox if the file cannot be selected
+          className="mb-2"
+        />
+      )}
       <img
         src={file.thumbnail || 'https://placehold.co/300x200'}
         alt={file.name}
@@ -96,6 +120,11 @@ const FileCard: React.FC<FileCardProps> = ({ file }) => {
         onRequestClose={() => setIsModalOpen(false)}
         content={renderPreviewContent()}
       />
+      {!canSelect && isSelectionMode && !isSelected && (
+        <div className="tooltip">
+          You can only select one video and one audio file.
+        </div>
+      )}
     </div>
   );
 };

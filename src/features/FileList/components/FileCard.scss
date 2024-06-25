@@ -1,0 +1,25 @@
+.file-card {
+    position: relative;
+  }
+  
+  .not-selectable {
+    opacity: 0.5;
+  }
+  
+  .not-selectable .tooltip {
+    display: block;
+  }
+  
+  .tooltip {
+    display: none;
+    position: absolute;
+    top: 0;
+    right: 0;
+    background-color: #000;
+    color: #fff;
+    padding: 5px;
+    border-radius: 3px;
+    font-size: 12px;
+    z-index: 10;
+  }
+  
