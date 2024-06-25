@@ -1,0 +1,22 @@
+.file-list {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+  
+    h2 {
+      margin-bottom: 20px;
+    }
+  
+    .filters {
+      margin-bottom: 20px;
+    }
+  
+    .pagination {
+      margin-top: 20px;
+    }
+  }
+  
+  button {
+    transition: background-color 0.2s ease;
+  }
+  

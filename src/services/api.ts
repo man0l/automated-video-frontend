@@ -1,4 +1,3 @@
-// src/services/api.ts
 import axios from 'axios';
 
 export interface File {
@@ -12,16 +11,22 @@ export interface File {
 
 export const fetchFiles = async (
   page: number = 1,
+  itemsPerPage: number = 5,
   type: string = '',
-  search: string = ''
-): Promise<File[]> => {
-  const response = await axios.get('http://localhost:3000/api/files');
-  const files: File[] = response.data;
-  
-  return files.filter(file => {
-    return (
-      (type === '' || file.type === type) &&
-      (search === '' || file.name.toLowerCase().includes(search.toLowerCase()))
-    );
+  search: string = '',
+  fromDate?: string,
+  toDate?: string
+): Promise<{ files: File[]; totalItems: number }> => {
+  const response = await axios.get('http://localhost:3000/api/files', {
+    params: {
+      page,
+      itemsPerPage,
+      type,
+      search,
+      fromDate,
+      toDate,
+    },
   });
+
+  return response.data;
 };
