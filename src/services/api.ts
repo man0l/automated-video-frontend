@@ -32,5 +32,5 @@ export const fetchFiles = async (
 };
 
 export const syncFiles = async (fileIds: number[]): Promise<void> => {
-  await axios.post('http://localhost:3000/api/sync', { fileIds });
+  await axios.post('http://localhost:3000/api/merge', { fileIds });
 };
