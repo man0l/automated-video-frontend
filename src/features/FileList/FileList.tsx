@@ -13,7 +13,7 @@ const FileList: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(5);
-  const [filters, setFilters] = useState({ type: '', search: '', fromDate: '', toDate: '' });
+  const [filters, setFilters] = useState({ type: '', search: '', fromDate: '', toDate: '', project: '' });
   const [totalItems, setTotalItems] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
@@ -31,7 +31,7 @@ const FileList: React.FC = () => {
       setLoading(true);
       setError(null);
       try {
-        const { files, totalItems } = await fetchFiles(currentPage, itemsPerPage, filters.type, filters.search, filters.fromDate, filters.toDate);
+        const { files, totalItems } = await fetchFiles(currentPage, itemsPerPage, filters.type, filters.search, filters.fromDate, filters.toDate, filters.project);
         setFiles(files);
         setTotalItems(totalItems);
       } catch (err) {

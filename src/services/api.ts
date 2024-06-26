@@ -22,7 +22,8 @@ export const fetchFiles = async (
   type: string = '',
   search: string = '',
   fromDate: string = '',
-  toDate: string = ''
+  toDate: string = '',
+  project: string = ''
 ): Promise<{ files: File[], totalItems: number }> => {
   const response = await axios.get('http://localhost:3000/api/files', {
     params: {
@@ -32,11 +33,11 @@ export const fetchFiles = async (
       search,
       fromDate,
       toDate,
+      project, // Include the project parameter
     },
   });
   return response.data;
 };
-
 export const fetchProjects = async (): Promise<Project[]> => {
   const response = await axios.get('http://localhost:3000/api/projects');
   return response.data;
