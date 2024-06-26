@@ -7,6 +7,13 @@ export interface File {
   type: 'text' | 'video' | 'audio';
   date: string;
   thumbnail: string | null;
+  project: Project | null;
+}
+
+export interface Project {
+  id: string;
+  name: string;
+  color: string;
 }
 
 export const fetchFiles = async (
@@ -14,9 +21,9 @@ export const fetchFiles = async (
   itemsPerPage: number = 5,
   type: string = '',
   search: string = '',
-  fromDate?: string,
-  toDate?: string
-): Promise<{ files: File[]; totalItems: number }> => {
+  fromDate: string = '',
+  toDate: string = ''
+): Promise<{ files: File[], totalItems: number }> => {
   const response = await axios.get('http://localhost:3000/api/files', {
     params: {
       page,
@@ -27,10 +34,17 @@ export const fetchFiles = async (
       toDate,
     },
   });
-
   return response.data;
 };
 
-export const syncFiles = async (fileIds: number[]): Promise<void> => {
-  await axios.post('http://localhost:3000/api/merge', { fileIds });
+export const fetchProjects = async (): Promise<Project[]> => {
+  const response = await axios.get('http://localhost:3000/api/projects');
+  return response.data;
+};
+
+export const updateFilesProject = async (fileIds: number[], projectId: string): Promise<void> => {
+  await axios.post('http://localhost:3000/api/files/updateProject', {
+    fileIds,
+    projectId,
+  });
 };

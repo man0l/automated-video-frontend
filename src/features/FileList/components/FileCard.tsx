@@ -11,6 +11,10 @@ interface File {
   type: 'text' | 'video' | 'audio';
   date: string;
   thumbnail: string | null;
+  project?: {
+    name: string;
+    color: string;
+  };
 }
 
 interface FileCardProps {
@@ -81,15 +85,13 @@ const FileCard: React.FC<FileCardProps> = ({ file, isSelected, isSelectionMode, 
   return (
     <div className={`file-card p-4 bg-white shadow-md rounded-lg ${isSelected ? 'border-2 border-blue-500' : ''} ${!canSelect && !isSelected ? 'not-selectable' : ''}`}>
       {isSelectionMode && (
-        <div className="flex justify-end">
-          <input
-            type="checkbox"
-            checked={isSelected}
-            onChange={handleCheckboxChange}
-            disabled={!canSelect && !isSelected}
-            className="mb-2"
-          />
-        </div>
+        <input
+          type="checkbox"
+          checked={isSelected}
+          onChange={handleCheckboxChange}
+          disabled={!canSelect && !isSelected}
+          className="mb-2"
+        />
       )}
       <img
         src={file.thumbnail || 'https://placehold.co/300x200'}
@@ -98,16 +100,23 @@ const FileCard: React.FC<FileCardProps> = ({ file, isSelected, isSelectionMode, 
       />
       <div className="p-4">
         <h3 className="text-xl font-semibold truncate" title={file.name}>{file.name}</h3>
+        {file.project && (
+          <span className="project-tag" style={{ backgroundColor: file.project.color }}>
+            {file.project.name}
+          </span>
+        )}
         <p>Type: {file.type}</p>
         <p>Date: {new Date(file.date).toLocaleDateString()}</p>
         <div className="flex justify-between mt-4">
-          {(file.type === 'video' || file.type === 'audio') && (
-            <button onClick={handlePreviewClick} className="text-blue-500 flex items-center" title="Play">
-              <FaPlay />
+          {file.type === 'video' || file.type === 'audio' ? (
+            <button onClick={handlePreviewClick} className="text-blue-500 flex items-center icon" title="Play">
+              <FaPlay className="mr-2" />
             </button>
+          ) : (
+            <div />
           )}
-          <a href={file.url} download className="text-blue-500 flex items-center" title="Download">
-            <FaDownload />
+          <a href={file.url} download className="text-blue-500 flex items-center icon" title="Download">
+            <FaDownload className="mr-2" />
           </a>
         </div>
       </div>
@@ -117,7 +126,7 @@ const FileCard: React.FC<FileCardProps> = ({ file, isSelected, isSelectionMode, 
         content={renderPreviewContent()}
       />
       {!canSelect && isSelectionMode && !isSelected && (
-        <div className="tooltip">
+        <div className="not-selectable-overlay">
           You can only select one video and one audio file.
         </div>
       )}
