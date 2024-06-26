@@ -19,7 +19,7 @@ interface FileCardProps {
   isSelectionMode: boolean;
   onSelect: (file: File) => void;
   onDeselect: (file: File) => void;
-  canSelect: boolean; // New prop to determine if the file can be selected
+  canSelect: boolean;
 }
 
 const FileCard: React.FC<FileCardProps> = ({ file, isSelected, isSelectionMode, onSelect, onDeselect, canSelect }) => {
@@ -28,11 +28,9 @@ const FileCard: React.FC<FileCardProps> = ({ file, isSelected, isSelectionMode, 
 
   useEffect(() => {
     if (isModalOpen) {
-      // Simulate loading time
       const timer = setTimeout(() => {
         setIsLoading(false);
-      }, 1000); // Adjust loading time as needed
-
+      }, 1000);
       return () => clearTimeout(timer);
     }
   }, [isModalOpen]);
@@ -83,13 +81,15 @@ const FileCard: React.FC<FileCardProps> = ({ file, isSelected, isSelectionMode, 
   return (
     <div className={`file-card p-4 bg-white shadow-md rounded-lg ${isSelected ? 'border-2 border-blue-500' : ''} ${!canSelect && !isSelected ? 'not-selectable' : ''}`}>
       {isSelectionMode && (
-        <input
-          type="checkbox"
-          checked={isSelected}
-          onChange={handleCheckboxChange}
-          disabled={!canSelect && !isSelected} // Disable checkbox if the file cannot be selected
-          className="mb-2"
-        />
+        <div className="flex justify-end">
+          <input
+            type="checkbox"
+            checked={isSelected}
+            onChange={handleCheckboxChange}
+            disabled={!canSelect && !isSelected}
+            className="mb-2"
+          />
+        </div>
       )}
       <img
         src={file.thumbnail || 'https://placehold.co/300x200'}
@@ -97,21 +97,17 @@ const FileCard: React.FC<FileCardProps> = ({ file, isSelected, isSelectionMode, 
         className="w-full h-32 object-cover rounded-t-lg"
       />
       <div className="p-4">
-        <h3 className="text-xl font-semibold">{file.name}</h3>
+        <h3 className="text-xl font-semibold truncate" title={file.name}>{file.name}</h3>
         <p>Type: {file.type}</p>
         <p>Date: {new Date(file.date).toLocaleDateString()}</p>
         <div className="flex justify-between mt-4">
-          {file.type === 'video' || file.type === 'audio' ? (
-            <button onClick={handlePreviewClick} className="text-blue-500 flex items-center">
-              <FaPlay className="mr-2" />
-              Play File
+          {(file.type === 'video' || file.type === 'audio') && (
+            <button onClick={handlePreviewClick} className="text-blue-500 flex items-center" title="Play">
+              <FaPlay />
             </button>
-          ) : (
-            <div />
           )}
-          <a href={file.url} download className="text-blue-500 flex items-center">
-            <FaDownload className="mr-2" />
-            Download File
+          <a href={file.url} download className="text-blue-500 flex items-center" title="Download">
+            <FaDownload />
           </a>
         </div>
       </div>

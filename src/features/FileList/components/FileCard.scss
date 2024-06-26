@@ -1,25 +1,51 @@
 .file-card {
-    position: relative;
-  }
-  
-  .not-selectable {
-    opacity: 0.5;
-  }
-  
-  .not-selectable .tooltip {
-    display: block;
-  }
-  
-  .tooltip {
-    display: none;
-    position: absolute;
-    top: 0;
-    right: 0;
-    background-color: #000;
-    color: #fff;
-    padding: 5px;
-    border-radius: 3px;
-    font-size: 12px;
-    z-index: 10;
-  }
-  
+  position: relative;
+  transition: box-shadow 0.3s;
+}
+
+.file-card:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.not-selectable {
+  opacity: 0.5;
+}
+
+.not-selectable .tooltip {
+  display: block;
+}
+
+.tooltip {
+  display: none;
+  position: absolute;
+  top: 0;
+  right: 0;
+  background-color: #000;
+  color: #fff;
+  padding: 5px;
+  border-radius: 3px;
+  font-size: 12px;
+  z-index: 10;
+}
+
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-card h3:hover::after,
+.file-card .icon:hover::after {
+  content: attr(title);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #000;
+  color: #fff;
+  padding: 5px;
+  border-radius: 3px;
+  font-size: 12px;
+  white-space: nowrap;
+  z-index: 10;
+}

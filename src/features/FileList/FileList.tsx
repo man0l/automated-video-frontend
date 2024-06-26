@@ -55,7 +55,7 @@ const FileList: React.FC = () => {
     try {
       await syncFiles(selectedFiles.map(file => file.id));
       setSyncMessage('Files have been sent for synchronization.');
-      setIsSyncDisabled(true); // Disable the sync button after synchronization
+      setIsSyncDisabled(true);
     } catch (err) {
       setSyncMessage('Error syncing files.');
     } finally {
@@ -66,14 +66,14 @@ const FileList: React.FC = () => {
   const toggleSelectionMode = () => {
     setIsSelectionMode(!isSelectionMode);
     if (isSelectionMode) {
-      setSelectedFiles([]); // Clear selections when exiting selection mode
-      setIsSyncDisabled(false); // Enable the sync button when exiting selection mode
+      setSelectedFiles([]);
+      setIsSyncDisabled(false);
     }
   };
 
   const canSelectFile = (file: File) => {
     if (selectedFiles.some(f => f.id === file.id)) {
-      return true; // Always allow already selected files to be selectable
+      return true;
     }
     if (file.type !== 'video' && file.type !== 'audio') {
       return false;
@@ -101,8 +101,8 @@ const FileList: React.FC = () => {
       {isSelectionMode && selectedFiles.length > 0 && (
         <div className="mb-4 text-center text-blue-500">
           {`Selected ${selectedFiles.length} file${selectedFiles.length > 1 ? 's' : ''}`}
-          <button 
-            onClick={handleSync} 
+          <button
+            onClick={handleSync}
             className="ml-4 bg-green-500 text-white p-2 rounded-lg hover:bg-green-600 transition duration-200"
             disabled={syncing || isSyncDisabled}
           >
@@ -135,7 +135,7 @@ const FileList: React.FC = () => {
                         isSelectionMode={isSelectionMode}
                         onSelect={handleSelectFile}
                         onDeselect={handleDeselectFile}
-                        canSelect={canSelectFile(file)} // Pass canSelect prop
+                        canSelect={canSelectFile(file)}
                       />
                     </div>
                   ))
@@ -144,12 +144,12 @@ const FileList: React.FC = () => {
                 )}
               </div>
               <div className="flex justify-center mt-6">
-                <Pagination 
-                  currentPage={currentPage} 
-                  setCurrentPage={setCurrentPage} 
-                  itemsPerPage={itemsPerPage} 
-                  setItemsPerPage={setItemsPerPage} 
-                  totalItems={totalItems} 
+                <Pagination
+                  currentPage={currentPage}
+                  setCurrentPage={setCurrentPage}
+                  itemsPerPage={itemsPerPage}
+                  setItemsPerPage={setItemsPerPage}
+                  totalItems={totalItems}
                 />
               </div>
             </>
