@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { FaPlay, FaDownload } from 'react-icons/fa';
+import { FaPlay, FaDownload, FaFileAlt } from 'react-icons/fa';
 import Modal from '../../../components/Modal';
 import { ClipLoader } from 'react-spinners';
+import { transcribeFile } from '../../../services/api'; // Make sure to import the transcribeFile function
 import './FileCard.scss';
 
 interface File {
@@ -12,9 +13,10 @@ interface File {
   date: string;
   thumbnail: string | null;
   project?: {
+    id: string;
     name: string;
     color: string;
-  };
+  } | null;
 }
 
 interface FileCardProps {
@@ -26,9 +28,18 @@ interface FileCardProps {
   canSelect: boolean;
 }
 
-const FileCard: React.FC<FileCardProps> = ({ file, isSelected, isSelectionMode, onSelect, onDeselect, canSelect }) => {
+const FileCard: React.FC<FileCardProps> = ({
+  file,
+  isSelected,
+  isSelectionMode,
+  onSelect,
+  onDeselect,
+  canSelect,
+}) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isTranscribing, setIsTranscribing] = useState(false);
+  const [transcriptionMessage, setTranscriptionMessage] = useState<string | null>(null);
 
   useEffect(() => {
     if (isModalOpen) {
@@ -82,6 +93,19 @@ const FileCard: React.FC<FileCardProps> = ({ file, isSelected, isSelectionMode, 
     setIsModalOpen(true);
   };
 
+  const handleTranscribe = async () => {
+    setIsTranscribing(true);
+    setTranscriptionMessage(null);
+    try {
+      await transcribeFile(file.id);
+      setTranscriptionMessage('File transcribed successfully.');
+    } catch (err) {
+      setTranscriptionMessage('Error transcribing file.');
+    } finally {
+      setIsTranscribing(false);
+    }
+  };
+
   return (
     <div className={`file-card p-4 bg-white shadow-md rounded-lg ${isSelected ? 'border-2 border-blue-500' : ''} ${!canSelect && !isSelected ? 'not-selectable' : ''}`}>
       {isSelectionMode && (
@@ -100,25 +124,38 @@ const FileCard: React.FC<FileCardProps> = ({ file, isSelected, isSelectionMode, 
       />
       <div className="p-4">
         <h3 className="text-xl font-semibold truncate" title={file.name}>{file.name}</h3>
+        <p>Type: {file.type}</p>
+        <p>Date: {new Date(file.date).toLocaleDateString()}</p>
         {file.project && (
-          <span className="project-tag" style={{ backgroundColor: file.project.color }}>
+          <span
+            className="project-tag"
+            style={{ backgroundColor: file.project.color }}
+            title={file.project.name}
+          >
             {file.project.name}
           </span>
         )}
-        <p>Type: {file.type}</p>
-        <p>Date: {new Date(file.date).toLocaleDateString()}</p>
         <div className="flex justify-between mt-4">
           {file.type === 'video' || file.type === 'audio' ? (
-            <button onClick={handlePreviewClick} className="text-blue-500 flex items-center icon" title="Play">
-              <FaPlay className="mr-2" />
-            </button>
+            <>
+              <button onClick={handlePreviewClick} className="text-blue-500 flex items-center icon" title="Play File">
+                <FaPlay />
+              </button>
+              {file.type === 'audio' && (
+              <button onClick={handleTranscribe} className="text-blue-500 flex items-center icon" title="Transcribe File">
+                <FaFileAlt />
+              </button>
+              )}
+            </>
           ) : (
             <div />
           )}
-          <a href={file.url} download className="text-blue-500 flex items-center icon" title="Download">
-            <FaDownload className="mr-2" />
+          <a href={file.url} download className="text-blue-500 flex items-center icon" title="Download File">
+            <FaDownload />
           </a>
         </div>
+        {isTranscribing && <p className="text-center text-blue-500">Transcribing...</p>}
+        {transcriptionMessage && <p className="text-center text-green-500">{transcriptionMessage}</p>}
       </div>
       <Modal
         isOpen={isModalOpen}
@@ -126,7 +163,7 @@ const FileCard: React.FC<FileCardProps> = ({ file, isSelected, isSelectionMode, 
         content={renderPreviewContent()}
       />
       {!canSelect && isSelectionMode && !isSelected && (
-        <div className="not-selectable-overlay">
+        <div className="tooltip">
           You can only select one video and one audio file.
         </div>
       )}
