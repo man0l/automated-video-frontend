@@ -49,3 +49,13 @@ export const updateFilesProject = async (fileIds: number[], projectId: string): 
     projectId,
   });
 };
+
+export const transcribeFile = async (fileId: number) => {
+  try {
+    const response = await axios.post('http://localhost:3000/api/files/transcribe', { fileId });
+    return response.data;
+  } catch (error) {
+    console.error('Error transcribing file:', error);
+    throw error;
+  }
+};
