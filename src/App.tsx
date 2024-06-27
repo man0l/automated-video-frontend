@@ -1,5 +1,6 @@
 // src/App.tsx
 import React from 'react';
+import { Toaster } from 'react-hot-toast';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import MainLayout from './components/layouts/MainLayout';
 import FileList from './features/FileList/FileList';
@@ -17,6 +18,7 @@ const App: React.FC = () => {
           <Route index element={<FileList />} />
         </Route>
       </Routes>
+      <Toaster position="top-right" reverseOrder={false} />
     </Router>
   );
 };

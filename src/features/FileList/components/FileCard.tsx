@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { FaPlay, FaDownload, FaFileAlt } from 'react-icons/fa';
 import Modal from '../../../components/Modal';
 import { ClipLoader } from 'react-spinners';
-import { transcribeFile } from '../../../services/api'; // Make sure to import the transcribeFile function
+import { transcribeFile } from '../../../services/api';
+import toast from 'react-hot-toast';
 import './FileCard.scss';
 
 interface File {
@@ -39,7 +40,6 @@ const FileCard: React.FC<FileCardProps> = ({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isTranscribing, setIsTranscribing] = useState(false);
-  const [transcriptionMessage, setTranscriptionMessage] = useState<string | null>(null);
 
   useEffect(() => {
     if (isModalOpen) {
@@ -95,15 +95,16 @@ const FileCard: React.FC<FileCardProps> = ({
 
   const handleTranscribe = async () => {
     setIsTranscribing(true);
-    setTranscriptionMessage(null);
-    try {
-      await transcribeFile(file.id);
-      setTranscriptionMessage('File transcribed successfully.');
-    } catch (err) {
-      setTranscriptionMessage('Error transcribing file.');
-    } finally {
+    toast.promise(
+      transcribeFile(file.id),
+      {
+        loading: 'Transcribing...',
+        success: 'File transcribed successfully!',
+        error: 'Error transcribing file.',
+      }
+    ).finally(() => {
       setIsTranscribing(false);
-    }
+    });
   };
 
   return (
@@ -142,9 +143,9 @@ const FileCard: React.FC<FileCardProps> = ({
                 <FaPlay />
               </button>
               {file.type === 'audio' && (
-              <button onClick={handleTranscribe} className="text-blue-500 flex items-center icon" title="Transcribe File">
-                <FaFileAlt />
-              </button>
+                <button onClick={handleTranscribe} className="text-blue-500 flex items-center icon" title="Transcribe File">
+                  <FaFileAlt />
+                </button>
               )}
             </>
           ) : (
@@ -154,8 +155,6 @@ const FileCard: React.FC<FileCardProps> = ({
             <FaDownload />
           </a>
         </div>
-        {isTranscribing && <p className="text-center text-blue-500">Transcribing...</p>}
-        {transcriptionMessage && <p className="text-center text-green-500">{transcriptionMessage}</p>}
       </div>
       <Modal
         isOpen={isModalOpen}

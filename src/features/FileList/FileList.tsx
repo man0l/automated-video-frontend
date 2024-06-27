@@ -5,6 +5,7 @@ import Pagination from './components/Pagination';
 import Filters from './components/Filters';
 import { fetchFiles, fetchProjects, updateFilesProject, File, Project } from '../../services/api';
 import { ClipLoader } from 'react-spinners';
+import toast from 'react-hot-toast';
 import './FileList.scss';
 
 const FileList: React.FC = () => {
@@ -66,20 +67,28 @@ const FileList: React.FC = () => {
   const handleSync = async () => {
     setSyncing(true);
     setSyncMessage(null);
-    try {
-      await updateFilesProject(selectedFiles.map(file => file.id), selectedFiles[0].project?.id || '');
-      setSyncMessage('Files have been sent for synchronization.');
-      setIsSyncDisabled(true);
-    } catch (err) {
-      setSyncMessage('Error syncing files.');
-    } finally {
+    toast.promise(
+      updateFilesProject(selectedFiles.map(file => file.id), selectedFiles[0].project?.id || ''),
+      {
+        loading: 'Syncing...',
+        success: 'Files have been sent for synchronization.',
+        error: 'Error syncing files.',
+      }
+    ).finally(() => {
       setSyncing(false);
-    }
+      setIsSyncDisabled(true);
+    });
   };
-
+  
   const handleProjectChange = async (projectId: string) => {
-    try {
-      await updateFilesProject(selectedFiles.map(file => file.id), projectId);
+    toast.promise(
+      updateFilesProject(selectedFiles.map(file => file.id), projectId),
+      {
+        loading: 'Updating project...',
+        success: 'Project updated successfully.',
+        error: 'Error updating project.',
+      }
+    ).then(() => {
       const updatedFiles = files.map(file => {
         if (selectedFiles.some(selectedFile => selectedFile.id === file.id)) {
           return {
@@ -91,10 +100,11 @@ const FileList: React.FC = () => {
       });
       setFiles(updatedFiles);
       setSelectedFiles([]);
-    } catch (err) {
+    }).catch(err => {
       console.error('Error updating project', err);
-    }
+    });
   };
+  
 
   const toggleSelectionMode = () => {
     setIsSelectionMode(!isSelectionMode);
