@@ -127,6 +127,11 @@ const FileList: React.FC = () => {
     if (isBulkSelectionMode) {
       return true;
     }
+
+    if(!isSelectionMode) {
+      return true;
+    }
+    
     if (selectedFiles.some(f => f.id === file.id)) {
       return true;
     }
@@ -142,6 +147,7 @@ const FileList: React.FC = () => {
     }
     return false;
   };
+  
 
   return (
     <div className="file-list p-4">
