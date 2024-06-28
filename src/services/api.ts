@@ -4,7 +4,7 @@ export interface File {
   id: number;
   name: string;
   url: string;
-  type: 'text' | 'video' | 'audio';
+  type: 'text' | 'video' | 'audio' | 'transcript';
   date: string;
   thumbnail: string | null;
   project: Project | null;
