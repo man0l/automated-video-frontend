@@ -57,7 +57,7 @@ const Filters: React.FC<FiltersProps> = ({ filters, setFilters }) => {
             className="w-full p-2 border rounded-lg"
           >
             <option value="">All</option>
-            <option value="text">Text</option>
+            <option value="transcript">Transcription</option>
             <option value="video">Video</option>
             <option value="audio">Audio</option>
           </select>
