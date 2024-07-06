@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { FaPlay, FaDownload, FaFileAlt } from 'react-icons/fa';
 import Modal from '../../../components/Modal';
 import { ClipLoader } from 'react-spinners';
-import { transcribeFile } from '../../../services/api';
+import { transcribeBySpeechService } from '../../../services/api';
 import toast from 'react-hot-toast';
 import './FileCard.scss';
 
@@ -96,7 +96,7 @@ const FileCard: React.FC<FileCardProps> = ({
   const handleTranscribe = async () => {
     setIsTranscribing(true);
     toast.promise(
-      transcribeFile(file.id),
+      transcribeBySpeechService(file.id),
       {
         loading: 'Transcribing...',
         success: 'File transcribed successfully!',
@@ -142,7 +142,7 @@ const FileCard: React.FC<FileCardProps> = ({
               <button onClick={handlePreviewClick} className="text-blue-500 flex items-center icon" title="Play File">
                 <FaPlay />
               </button>
-              {file.type === 'audio' && (
+              {file.type === 'audio' && file.project && (
                 <button onClick={handleTranscribe} className="text-blue-500 flex items-center icon" title="Transcribe File">
                   <FaFileAlt />
                 </button>

@@ -59,3 +59,13 @@ export const transcribeFile = async (fileId: number) => {
     throw error;
   }
 };
+
+export const transcribeBySpeechService = async (fileId: number) => {
+  try {
+    const response = await axios.post('http://localhost:3000/api/azure/schedule-speech-job', { fileId });
+    return response.data;
+  } catch (error) {
+    console.error('Error transcribing file:', error);
+    throw error;
+  }
+}
