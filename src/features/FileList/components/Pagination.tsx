@@ -44,9 +44,9 @@ const Pagination: React.FC<PaginationProps> = ({ currentPage, setCurrentPage, it
       <div>
         <label htmlFor="itemsPerPage" className="mr-2">Items per page:</label>
         <select id="itemsPerPage" value={itemsPerPage} onChange={handleItemsPerPageChange} className="p-2 border rounded">
-          <option value={5}>5</option>
           <option value={10}>10</option>
-          <option value={15}>15</option>
+          <option value={20}>20</option>
+          <option value={50}>50</option>
         </select>
       </div>
     </div>

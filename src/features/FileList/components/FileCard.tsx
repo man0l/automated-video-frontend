@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { FaPlay, FaDownload, FaFileAlt } from 'react-icons/fa';
+import { FaPlay, FaDownload, FaFileAlt, FaEdit } from 'react-icons/fa'; // Added FaEdit icon
 import Modal from '../../../components/Modal';
 import { ClipLoader } from 'react-spinners';
-import { transcribeBySpeechService } from '../../../services/api';
+import { transcribeBySpeechService, videoEditingJob } from '../../../services/api'; // Import videoEditingJob function
 import toast from 'react-hot-toast';
 import './FileCard.scss';
 
@@ -13,6 +13,7 @@ interface File {
   type: 'text' | 'video' | 'audio';
   date: string;
   thumbnail: string | null;
+  size: string; // Size as a string
   project?: {
     id: string;
     name: string;
@@ -40,6 +41,7 @@ const FileCard: React.FC<FileCardProps> = ({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isTranscribing, setIsTranscribing] = useState(false);
+  const [isEditing, setIsEditing] = useState(false); // State for video editing job
 
   useEffect(() => {
     if (isModalOpen) {
@@ -49,6 +51,15 @@ const FileCard: React.FC<FileCardProps> = ({
       return () => clearTimeout(timer);
     }
   }, [isModalOpen]);
+
+  const formatFileSize = (size: string) => {
+    const bytes = parseInt(size, 10);
+    if (isNaN(bytes) || bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
 
   const renderPreviewContent = () => {
     if (isLoading) {
@@ -107,6 +118,20 @@ const FileCard: React.FC<FileCardProps> = ({
     });
   };
 
+  const handleVideoEdit = async () => { // Function for handling video editing job
+    setIsEditing(true);
+    toast.promise(
+      videoEditingJob(file.id),
+      {
+        loading: 'Editing video...',
+        success: 'Video editing job scheduled successfully!',
+        error: 'Error scheduling video editing job.',
+      }
+    ).finally(() => {
+      setIsEditing(false);
+    });
+  };
+
   return (
     <div className={`file-card p-4 bg-white shadow-md rounded-lg ${isSelected ? 'border-2 border-blue-500' : ''} ${!canSelect && !isSelected ? 'not-selectable' : ''}`}>
       {isSelectionMode && (
@@ -127,14 +152,19 @@ const FileCard: React.FC<FileCardProps> = ({
         <h3 className="text-xl font-semibold truncate" title={file.name}>{file.name}</h3>
         <p>Type: {file.type}</p>
         <p>Date: {new Date(file.date).toLocaleDateString()}</p>
+        <p><span className="file-size text-gray-600 text-sm">
+              ({formatFileSize(file.size)})
+            </span></p>
         {file.project && (
-          <span
-            className="project-tag"
-            style={{ backgroundColor: file.project.color }}
-            title={file.project.name}
-          >
-            {file.project.name}
-          </span>
+          <div className="flex items-center">
+            <span
+              className="project-tag mr-2"
+              style={{ backgroundColor: file.project.color }}
+              title={file.project.name}
+            >
+              {file.project.name}
+            </span>            
+          </div>
         )}
         <div className="flex justify-between mt-4">
           {file.type === 'video' || file.type === 'audio' ? (
@@ -145,6 +175,11 @@ const FileCard: React.FC<FileCardProps> = ({
               {file.type === 'audio' && file.project && (
                 <button onClick={handleTranscribe} className="text-blue-500 flex items-center icon" title="Transcribe File">
                   <FaFileAlt />
+                </button>
+              )}
+              {file.type === 'video' && (
+                <button onClick={handleVideoEdit} className="text-blue-500 flex items-center icon" title="Edit Video">
+                  <FaEdit />
                 </button>
               )}
             </>

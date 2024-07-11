@@ -13,7 +13,7 @@ const FileList: React.FC = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(5);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   const [filters, setFilters] = useState({ type: '', search: '', fromDate: '', toDate: '', project: '' });
   const [totalItems, setTotalItems] = useState(0);
   const [error, setError] = useState<string | null>(null);
