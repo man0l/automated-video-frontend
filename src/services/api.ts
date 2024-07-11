@@ -69,3 +69,13 @@ export const transcribeBySpeechService = async (fileId: number) => {
     throw error;
   }
 }
+
+export const videoEditingJob = async (fileId: number) => {
+  try {
+    const response = await axios.post('http://localhost:3000/api/azure/schedule-video-editing-job', { fileId });
+    return response.data;
+  } catch (error) {
+    console.error('Error editing video:', error);
+    throw error;
+  }
+}
