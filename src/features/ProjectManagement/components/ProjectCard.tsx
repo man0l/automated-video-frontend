@@ -11,8 +11,12 @@ import {
   trimVideo,
   generateSubtitles,
   addSubtitles,
+  File,
 } from '../../../services/api';
+import Modal from '../../../components/Modal';
 import toast from 'react-hot-toast';
+import { ClipLoader } from 'react-spinners';
+import './ProjectCard.scss';
 
 interface ProjectCardProps {
   project: Project;
@@ -20,8 +24,10 @@ interface ProjectCardProps {
 }
 
 const ProjectCard: React.FC<ProjectCardProps> = ({ project, onActionClick }) => {
-  const [files, setFiles] = useState([]);
+  const [files, setFiles] = useState<File[]>([]);
   const [loading, setLoading] = useState(false);
+  const [modalContent, setModalContent] = useState<JSX.Element | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     const loadFiles = async () => {
@@ -29,7 +35,6 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onActionClick }) => 
       try {
         const { files } = await fetchFiles(1, 100, '', '', '', '', project.id);
         setFiles(files);
-        console.log('Fetched files:', files); // Debugging log
       } catch (error) {
         console.error('Error fetching project files:', error);
       } finally {
@@ -46,12 +51,12 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onActionClick }) => 
       const videoFiles = files.filter(file => file.type === 'video');
 
       const latestAudioFile = audioFiles.reduce((latest, file) =>
-        new Date(file.createdAt) > new Date(latest.createdAt) ? file : latest,
+        new Date(file.date) > new Date(latest.date) ? file : latest,
         audioFiles[0]
       );
 
       const latestVideoFile = videoFiles.reduce((latest, file) =>
-        new Date(file.createdAt) > new Date(latest.createdAt) ? file : latest,
+        new Date(file.date) > new Date(latest.date) ? file : latest,
         videoFiles[0]
       );
 
@@ -59,7 +64,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onActionClick }) => 
         case 'compress':
           if (latestVideoFile) {
             await compressVideo(latestVideoFile.id);
-            await updateProject(project.id, { status: 'compressed' });
+            if (project.status === 'initial') await updateProject(project.id, { status: 'compressed' });
             toast.success('Video compression scheduled successfully!');
           } else {
             toast.error('No video files found for compression');
@@ -68,7 +73,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onActionClick }) => 
         case 'merge':
           if (latestAudioFile && latestVideoFile) {
             await mergeAudio(latestAudioFile.id, latestVideoFile.id);
-            await updateProject(project.id, { status: 'merged' });
+            if (project.status === 'compressed') await updateProject(project.id, { status: 'merged' });
             toast.success('Audio merge scheduled successfully!');
           } else {
             toast.error('No audio or video files found for merging');
@@ -77,7 +82,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onActionClick }) => 
         case 'trim':
           if (latestVideoFile) {
             await trimVideo(latestVideoFile.id);
-            await updateProject(project.id, { status: 'trimmed' });
+            if (project.status === 'merged') await updateProject(project.id, { status: 'trimmed' });
             toast.success('Video trim/cut scheduled successfully!');
           } else {
             toast.error('No video files found for trimming');
@@ -86,7 +91,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onActionClick }) => 
         case 'generateSubtitles':
           if (latestAudioFile) {
             await generateSubtitles(latestAudioFile.id);
-            await updateProject(project.id, { status: 'subtitlesGenerated' });
+            if (project.status === 'trimmed') await updateProject(project.id, { status: 'subtitlesGenerated' });
             toast.success('Subtitle generation scheduled successfully!');
           } else {
             toast.error('No audio files found for subtitle generation');
@@ -95,7 +100,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onActionClick }) => 
         case 'addSubtitles':
           if (latestVideoFile) {
             await addSubtitles(latestVideoFile.id);
-            await updateProject(project.id, { status: 'completed' });
+            if (project.status === 'subtitlesGenerated') await updateProject(project.id, { status: 'completed' });
             toast.success('Subtitles added successfully!');
           } else {
             toast.error('No video files found for adding subtitles');
@@ -107,6 +112,69 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onActionClick }) => 
     } catch (error) {
       toast.error(`Error performing ${action}`);
     }
+  };
+
+  const renderPreviewContent = (file: File) => {
+    if (loading) {
+      return <ClipLoader size={50} color={"#123abc"} loading={loading} />;
+    }
+
+    if (file.type === 'video') {
+      return (
+        <video controls className="w-full h-full">
+          <source src={file.url} type="video/mp4" />
+          Your browser does not support the video tag.
+        </video>
+      );
+    } else if (file.type === 'audio') {
+      return (
+        <audio controls className="w-full">
+          <source src={file.url} type="audio/mp3" />
+          Your browser does not support the audio element.
+        </audio>
+      );
+    } else if (file.type === 'text') {
+      return (
+        <div className="p-4 overflow-auto max-h-96">
+          <pre>{file.url}</pre>
+        </div>
+      );
+    } else {
+      return (
+        <img
+          src={file.thumbnail || 'https://placehold.co/300x200'}
+          alt={file.name}
+          className="w-full h-full object-cover"
+        />
+      );
+    }
+  };
+
+  const handlePreview = (file: File) => {
+    setModalContent(renderPreviewContent(file));
+    setIsModalOpen(true);
+  };
+
+  const latestAudioFile = files.filter(file => file.type === 'audio').reduce((latest, file) =>
+    new Date(file.date) > new Date(latest.date) ? file : latest,
+    files[0]
+  );
+
+  const latestVideoFile = files.filter(file => file.type === 'video').reduce((latest, file) =>
+    new Date(file.date) > new Date(latest.date) ? file : latest,
+    files[0]
+  );
+
+  const latestTranscriptFile = files.filter(file => file.type === 'text').reduce((latest, file) =>
+    new Date(file.date) > new Date(latest.date) ? file : latest,
+    files[0]
+  );
+
+  const isActionDisabled = (action: string) => {
+    const statusOrder = ['initial', 'compressed', 'merged', 'trimmed', 'subtitlesGenerated', 'completed'];
+    const currentStatusIndex = statusOrder.indexOf(project.status);
+    const actionStatusIndex = statusOrder.indexOf(action);
+    return actionStatusIndex > currentStatusIndex + 1;
   };
 
   return (
@@ -122,40 +190,71 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onActionClick }) => 
       <div className="p-4 flex flex-col space-y-2">
         <button
           onClick={() => handleAction('compress')}
-          disabled={project.status !== 'initial'}
+          disabled={isActionDisabled('compressed')}
           className="flex items-center px-4 py-2 bg-blue-500 text-white rounded disabled:bg-gray-300"
         >
           <FaCompress className="mr-2" /> Compress Video
         </button>
         <button
           onClick={() => handleAction('merge')}
-          disabled={project.status !== 'compressed'}
+          disabled={isActionDisabled('merged')}
           className="flex items-center px-4 py-2 bg-blue-500 text-white rounded disabled:bg-gray-300"
         >
           <FaMusic className="mr-2" /> Merge Audio
         </button>
         <button
           onClick={() => handleAction('trim')}
-          disabled={project.status !== 'merged'}
+          disabled={isActionDisabled('trimmed')}
           className="flex items-center px-4 py-2 bg-blue-500 text-white rounded disabled:bg-gray-300"
         >
           <FaCut className="mr-2" /> Trim/Cut
         </button>
         <button
           onClick={() => handleAction('generateSubtitles')}
-          disabled={project.status !== 'trimmed'}
+          disabled={isActionDisabled('subtitlesGenerated')}
           className="flex items-center px-4 py-2 bg-blue-500 text-white rounded disabled:bg-gray-300"
         >
           <FaClosedCaptioning className="mr-2" /> Generate Subtitles
         </button>
         <button
           onClick={() => handleAction('addSubtitles')}
-          disabled={project.status !== 'subtitlesGenerated'}
+          disabled={isActionDisabled('completed')}
           className="flex items-center px-4 py-2 bg-blue-500 text-white rounded disabled:bg-gray-300"
         >
           <FaFileVideo className="mr-2" /> Add Subtitles
         </button>
       </div>
+      <div className="p-4 flex justify-between space-x-2">
+        {latestVideoFile && (
+          <button
+            onClick={() => handlePreview(latestVideoFile)}
+            className="text-blue-500 flex items-center icon"
+          >
+            Preview Video
+          </button>
+        )}
+        {latestAudioFile && (
+          <button
+            onClick={() => handlePreview(latestAudioFile)}
+            className="text-blue-500 flex items-center icon"
+          >
+            Preview Audio
+          </button>
+        )}
+        {latestTranscriptFile && (
+          <button
+            onClick={() => handlePreview(latestTranscriptFile)}
+            className="text-blue-500 flex items-center icon"
+          >
+            Preview Transcript
+          </button>
+        )}
+      </div>
+      <Modal
+        isOpen={isModalOpen}
+        onRequestClose={() => setIsModalOpen(false)}
+        content={modalContent}
+      />
     </div>
   );
 };
