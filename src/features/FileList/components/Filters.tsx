@@ -28,8 +28,10 @@ const Filters: React.FC<FiltersProps> = ({ filters, setFilters }) => {
   useEffect(() => {
     const loadProjects = async () => {
       try {
-        const projects = await fetchProjects();
-        setProjects(projects);
+        const response = await fetchProjects({          
+          itemsPerPage: 100,
+        });
+        setProjects(response.projects);
       } catch (err) {
         console.error('Error loading projects', err);
       }
@@ -97,7 +99,7 @@ const Filters: React.FC<FiltersProps> = ({ filters, setFilters }) => {
             className="w-full p-2 border rounded-lg"
           >
             <option value="">All</option>
-            {projects.map(project => (
+            {projects && projects.map(project => (
               <option key={project.id} value={project.id}>{project.name}</option>
             ))}
           </select>

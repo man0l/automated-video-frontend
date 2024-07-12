@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { FaCheckCircle, FaTimesCircle, FaEdit } from 'react-icons/fa';
 import FileCard from './components/FileCard';
-import Pagination from './components/Pagination';
+import Pagination from '../../components/Pagination';
 import Filters from './components/Filters';
 import { fetchFiles, fetchProjects, updateFilesProject, File, Project } from '../../services/api';
 import { ClipLoader } from 'react-spinners';
@@ -47,10 +47,15 @@ const FileList: React.FC = () => {
   useEffect(() => {
     const loadProjects = async () => {
       try {
-        const projects = await fetchProjects();
-        setProjects(projects);
+        const projects = await fetchProjects({itemsPerPage: 100});
+        if (Array.isArray(projects)) {
+          setProjects(projects);
+        } else {
+          setProjects([]);
+        }
       } catch (err) {
         console.error('Error loading projects', err);
+        setProjects([]);
       }
     };
     loadProjects();
@@ -191,7 +196,7 @@ const FileList: React.FC = () => {
             className="ml-4 bg-white border border-gray-300 p-2 rounded-lg"
           >
             <option value="">Change Project</option>
-            {projects.map((project) => (
+            {projects && projects.map((project) => (
               <option key={project.id} value={project.id}>{project.name}</option>
             ))}
           </select>

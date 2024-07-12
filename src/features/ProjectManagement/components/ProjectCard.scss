@@ -1,0 +1,59 @@
+
+.project-card {
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    margin: 16px;
+    overflow: hidden;
+    transition: transform 0.3s;
+  
+    &:hover {
+      transform: translateY(-4px);
+    }
+  
+    .project-header {
+      padding: 16px;
+      color: #fff;
+  
+      h3 {
+        margin: 0;
+      }
+    }
+  
+    .project-body {
+      padding: 16px;
+  
+      p {
+        margin: 8px 0;
+      }
+    }
+  
+    .project-actions {
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+  
+      button {
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        background: #007bff;
+        color: #fff;
+        border: none;
+        padding: 8px;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background 0.3s;
+  
+        &:disabled {
+          background: #cccccc;
+          cursor: not-allowed;
+        }
+  
+        svg {
+          margin-right: 8px;
+        }
+      }
+    }
+  }
+  
