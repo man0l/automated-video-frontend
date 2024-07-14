@@ -183,6 +183,12 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onActionClick }) => 
         <h3 className="text-white text-xl font-bold">{project.name}</h3>
       </div>
       <div className="p-4">
+        
+        <img
+          src={latestVideoFile && latestVideoFile.thumbnail || 'https://placehold.co/300x200'}
+          alt={latestVideoFile && latestVideoFile.name}
+          className="w-full h-32 object-cover rounded-t-lg"
+        />
         <p className="mb-2">Created At: {new Date(project.createdAt).toLocaleDateString()}</p>
         <p className="mb-2">Updated At: {new Date(project.updatedAt).toLocaleDateString()}</p>
         <p className="mb-2">Status: {project.status}</p>
