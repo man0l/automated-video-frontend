@@ -1,11 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { FaCompress, FaMusic, FaCut, FaClosedCaptioning, FaFileVideo } from 'react-icons/fa';
+import { FaCompress, FaMusic, FaCut, FaClosedCaptioning, FaFileVideo, FaVideo, FaFileAlt, FaFileAudio, FaClosedCaptioning as FaSubtitles } from 'react-icons/fa';
 import {
   Project,
   updateProject,
   fetchFiles,
-  transcribeBySpeechService,
-  videoEditingJob,
   compressVideo,
   mergeAudio,
   trimVideo,
@@ -25,9 +23,13 @@ interface ProjectCardProps {
 
 const ProjectCard: React.FC<ProjectCardProps> = ({ project, onActionClick }) => {
   const [files, setFiles] = useState<File[]>([]);
+  const [latestVideoFile, setLatestVideoFile] = useState<File | null>(null);
+  const [latestAudioFile, setLatestAudioFile] = useState<File | null>(null);
+  const [latestTranscriptFile, setLatestTranscriptFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [modalContent, setModalContent] = useState<JSX.Element | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [currentProject, setCurrentProject] = useState<Project>(project);
 
   useEffect(() => {
     const loadFiles = async () => {
@@ -35,6 +37,30 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onActionClick }) => 
       try {
         const { files } = await fetchFiles(1, 100, '', '', '', '', project.id);
         setFiles(files);
+
+        const audioFiles = files.filter(file => file.type === 'audio');
+        const videoFiles = files.filter(file => file.type === 'video');
+        const transcriptFiles = files.filter(file => file.type === 'transcript');
+
+        const latestAudio = audioFiles.reduce((latest, file) =>
+          new Date(file.date) > new Date(latest.date) ? file : latest,
+          audioFiles[0]
+        );
+
+        const latestVideo = videoFiles.reduce((latest, file) =>
+          new Date(file.date) > new Date(latest.date) ? file : latest,
+          videoFiles[0]
+        );
+
+        const latestTranscript = transcriptFiles.reduce((latest, file) =>
+          new Date(file.date) > new Date(latest.date) ? file : latest,
+          transcriptFiles[0]
+        );
+
+        setLatestAudioFile(latestAudio || null);
+        setLatestVideoFile(latestVideo || null);
+        setLatestTranscriptFile(latestTranscript || null);
+
       } catch (error) {
         console.error('Error fetching project files:', error);
       } finally {
@@ -47,24 +73,13 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onActionClick }) => 
 
   const handleAction = async (action: string) => {
     try {
-      const audioFiles = files.filter(file => file.type === 'audio');
-      const videoFiles = files.filter(file => file.type === 'video');
-
-      const latestAudioFile = audioFiles.reduce((latest, file) =>
-        new Date(file.date) > new Date(latest.date) ? file : latest,
-        audioFiles[0]
-      );
-
-      const latestVideoFile = videoFiles.reduce((latest, file) =>
-        new Date(file.date) > new Date(latest.date) ? file : latest,
-        videoFiles[0]
-      );
+      let newStatus = currentProject.status;
 
       switch (action) {
         case 'compress':
           if (latestVideoFile) {
             await compressVideo(latestVideoFile.id);
-            if (project.status === 'initial') await updateProject(project.id, { status: 'compressed' });
+            if (currentProject.status === 'initial') newStatus = 'compressed';
             toast.success('Video compression scheduled successfully!');
           } else {
             toast.error('No video files found for compression');
@@ -73,7 +88,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onActionClick }) => 
         case 'merge':
           if (latestAudioFile && latestVideoFile) {
             await mergeAudio(latestAudioFile.id, latestVideoFile.id);
-            if (project.status === 'compressed') await updateProject(project.id, { status: 'merged' });
+            if (currentProject.status === 'compressed') newStatus = 'merged';
             toast.success('Audio merge scheduled successfully!');
           } else {
             toast.error('No audio or video files found for merging');
@@ -82,25 +97,25 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onActionClick }) => 
         case 'trim':
           if (latestVideoFile) {
             await trimVideo(latestVideoFile.id);
-            if (project.status === 'merged') await updateProject(project.id, { status: 'trimmed' });
+            if (currentProject.status === 'merged') newStatus = 'trimmed';
             toast.success('Video trim/cut scheduled successfully!');
           } else {
             toast.error('No video files found for trimming');
           }
           break;
         case 'generateSubtitles':
-          if (latestAudioFile) {
-            await generateSubtitles(latestAudioFile.id);
-            if (project.status === 'trimmed') await updateProject(project.id, { status: 'subtitlesGenerated' });
+          if (latestVideoFile) {
+            await generateSubtitles(latestVideoFile.id);
+            if (currentProject.status === 'trimmed') newStatus = 'subtitlesGenerated';
             toast.success('Subtitle generation scheduled successfully!');
           } else {
-            toast.error('No audio files found for subtitle generation');
+            toast.error('No video files found for subtitle generation');
           }
           break;
         case 'addSubtitles':
           if (latestVideoFile) {
             await addSubtitles(latestVideoFile.id);
-            if (project.status === 'subtitlesGenerated') await updateProject(project.id, { status: 'completed' });
+            if (currentProject.status === 'subtitlesGenerated') newStatus = 'completed';
             toast.success('Subtitles added successfully!');
           } else {
             toast.error('No video files found for adding subtitles');
@@ -108,6 +123,12 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onActionClick }) => 
           break;
         default:
           break;
+      }
+
+      // Update project status in the API
+      if (newStatus !== currentProject.status) {
+        await updateProject(currentProject.id, { status: newStatus });
+        setCurrentProject({ ...currentProject, status: newStatus });
       }
     } catch (error) {
       toast.error(`Error performing ${action}`);
@@ -155,43 +176,27 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onActionClick }) => 
     setIsModalOpen(true);
   };
 
-  const latestAudioFile = files.filter(file => file.type === 'audio').reduce((latest, file) =>
-    new Date(file.date) > new Date(latest.date) ? file : latest,
-    files[0]
-  );
-
-  const latestVideoFile = files.filter(file => file.type === 'video').reduce((latest, file) =>
-    new Date(file.date) > new Date(latest.date) ? file : latest,
-    files[0]
-  );
-
-  const latestTranscriptFile = files.filter(file => file.type === 'text').reduce((latest, file) =>
-    new Date(file.date) > new Date(latest.date) ? file : latest,
-    files[0]
-  );
-
   const isActionDisabled = (action: string) => {
     const statusOrder = ['initial', 'compressed', 'merged', 'trimmed', 'subtitlesGenerated', 'completed'];
-    const currentStatusIndex = statusOrder.indexOf(project.status);
+    const currentStatusIndex = statusOrder.indexOf(currentProject.status);
     const actionStatusIndex = statusOrder.indexOf(action);
     return actionStatusIndex > currentStatusIndex + 1;
   };
 
   return (
     <div className="bg-white rounded-lg shadow-md m-4 overflow-hidden transform transition-transform hover:-translate-y-1">
-      <div className="p-4" style={{ backgroundColor: project.color }}>
-        <h3 className="text-white text-xl font-bold">{project.name}</h3>
+      <div className="p-4" style={{ backgroundColor: currentProject.color }}>
+        <h3 className="text-white text-xl font-bold">{currentProject.name}</h3>
       </div>
       <div className="p-4">
-        
         <img
-          src={latestVideoFile && latestVideoFile.thumbnail || 'https://placehold.co/300x200'}
-          alt={latestVideoFile && latestVideoFile.name}
+          src={latestVideoFile?.thumbnail || 'https://placehold.co/300x200'}
+          alt={latestVideoFile?.name}
           className="w-full h-32 object-cover rounded-t-lg"
         />
-        <p className="mb-2">Created At: {new Date(project.createdAt).toLocaleDateString()}</p>
-        <p className="mb-2">Updated At: {new Date(project.updatedAt).toLocaleDateString()}</p>
-        <p className="mb-2">Status: {project.status}</p>
+        <p className="mb-2">Created At: {new Date(currentProject.createdAt).toLocaleDateString()}</p>
+        <p className="mb-2">Updated At: {new Date(currentProject.updatedAt).toLocaleDateString()}</p>
+        <p className="mb-2">Status: {currentProject.status}</p>
       </div>
       <div className="p-4 flex flex-col space-y-2">
         <button
@@ -236,15 +241,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onActionClick }) => 
             onClick={() => handlePreview(latestVideoFile)}
             className="text-blue-500 flex items-center icon"
           >
-            Preview Video
-          </button>
-        )}
-        {latestAudioFile && (
-          <button
-            onClick={() => handlePreview(latestAudioFile)}
-            className="text-blue-500 flex items-center icon"
-          >
-            Preview Audio
+            <FaVideo />
           </button>
         )}
         {latestTranscriptFile && (
@@ -252,7 +249,23 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onActionClick }) => 
             onClick={() => handlePreview(latestTranscriptFile)}
             className="text-blue-500 flex items-center icon"
           >
-            Preview Transcript
+            <FaSubtitles />
+          </button>
+        )}
+        {latestAudioFile && (
+          <button
+            onClick={() => handlePreview(latestAudioFile)}
+            className="text-blue-500 flex items-center icon"
+          >
+            <FaFileAudio />
+          </button>
+        )}
+        {latestTranscriptFile && (
+          <button
+            onClick={() => handlePreview(latestTranscriptFile)}
+            className="text-blue-500 flex items-center icon"
+          >
+            <FaFileAlt />
           </button>
         )}
       </div>
