@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FaCompress, FaMusic, FaCut, FaClosedCaptioning, FaFileVideo, FaVideo, FaFileAlt, FaFileAudio, FaClosedCaptioning as FaSubtitles } from 'react-icons/fa';
+import { FaCompress, FaMusic, FaCut, FaClosedCaptioning, FaFileVideo, FaVideo, FaFileAlt, FaFileAudio, FaClosedCaptioning as FaSubtitles, FaFileArchive } from 'react-icons/fa';
 import {
   Project,
   updateProject,
@@ -12,8 +12,11 @@ import {
   File,
 } from '../../../services/api';
 import Modal from '../../../components/Modal';
-import toast from 'react-hot-toast';
+import toast, { Toaster } from 'react-hot-toast';
 import { ClipLoader } from 'react-spinners';
+import jsonBeautify from 'json-beautify';
+import JSZip from 'jszip';
+import { saveAs } from 'file-saver';
 import './ProjectCard.scss';
 
 interface ProjectCardProps {
@@ -30,6 +33,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onActionClick }) => 
   const [modalContent, setModalContent] = useState<JSX.Element | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentProject, setCurrentProject] = useState<Project>(project);
+  const [downloadProgress, setDownloadProgress] = useState<number>(0);
 
   useEffect(() => {
     const loadFiles = async () => {
@@ -154,10 +158,10 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onActionClick }) => 
           Your browser does not support the audio element.
         </audio>
       );
-    } else if (file.type === 'text') {
+    } else if (file.type === 'transcript' || file.type === 'text') {
       return (
         <div className="p-4 overflow-auto max-h-96">
-          <pre>{file.url}</pre>
+          <pre>{jsonBeautify(JSON.parse(file.url), null, 2, 80)}</pre>
         </div>
       );
     } else {
@@ -171,8 +175,14 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onActionClick }) => 
     }
   };
 
-  const handlePreview = (file: File) => {
-    setModalContent(renderPreviewContent(file));
+  const handlePreview = async (file: File) => {
+    if (file.type === 'transcript') {
+      const response = await fetch(file.url);
+      const data = await response.json();
+      setModalContent(renderPreviewContent({ ...file, url: JSON.stringify(data) }));
+    } else {
+      setModalContent(renderPreviewContent(file));
+    }
     setIsModalOpen(true);
   };
 
@@ -181,6 +191,61 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onActionClick }) => 
     const currentStatusIndex = statusOrder.indexOf(currentProject.status);
     const actionStatusIndex = statusOrder.indexOf(action);
     return actionStatusIndex > currentStatusIndex + 1;
+  };
+
+  const handleDownloadAll = async () => {
+    if (!latestVideoFile || !latestTranscriptFile) {
+      toast.error('Latest video or transcript files not found.');
+      return;
+    }
+
+    const zip = new JSZip();
+    let loadedBytes = 0;
+    const filesToDownload = [latestVideoFile, latestTranscriptFile];
+    let totalBytes = 0;
+
+    const updateProgress = () => {
+      setDownloadProgress((loadedBytes / totalBytes) * 100);
+    };
+
+    const toastId = toast.loading('Downloading files...', {
+      duration: 0, // Make the toast persistent
+      icon: '⬇️',
+    });
+
+    const filePromises = filesToDownload.map(async file => {
+      const response = await fetch(file.url);
+      const reader = response.body.getReader();
+      const contentLength = +response.headers.get('Content-Length');
+      totalBytes += contentLength;
+
+      let receivedLength = 0;
+      const chunks = [];
+
+      while(true) {
+        const { done, value } = await reader.read();
+        if (done) {
+          break;
+        }
+        chunks.push(value);
+        receivedLength += value.length;
+        loadedBytes += value.length;
+        updateProgress();
+        toast.loading(`Downloading files... ${Math.round((loadedBytes / totalBytes) * 100)}%`, {
+          id: toastId,
+        });
+      }
+
+      const blob = new Blob(chunks);
+      zip.file(file.name, blob);
+    });
+
+    await Promise.all(filePromises);
+
+    const content = await zip.generateAsync({ type: 'blob' });
+    saveAs(content, `${currentProject.name}-files.zip`);
+    toast.dismiss(toastId); // Dismiss the loading toast
+    toast.success('All files downloaded successfully!');
   };
 
   return (
@@ -268,7 +333,15 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, onActionClick }) => 
             <FaFileAlt />
           </button>
         )}
-      </div>
+        {latestVideoFile && latestTranscriptFile && (
+          <button
+            onClick={handleDownloadAll}
+            className="text-blue-500 flex items-center icon"
+          >
+            <FaFileArchive />
+          </button>
+        )}
+      </div>      
       <Modal
         isOpen={isModalOpen}
         onRequestClose={() => setIsModalOpen(false)}

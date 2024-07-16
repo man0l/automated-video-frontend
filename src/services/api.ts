@@ -5,6 +5,7 @@ export interface File {
   name: string;
   url: string;
   type: 'text' | 'video' | 'audio' | 'transcript';
+  size: BigInt;
   date: string;
   thumbnail: string | null;
   project: Project | null;
