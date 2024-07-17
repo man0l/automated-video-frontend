@@ -3,9 +3,18 @@ import { Scenario, CreateScenarioPayload, UpdateScenarioPayload } from '../Scena
 
 const API_BASE_URL = '/api/scenarios'; // Base URL for the scenario API
 axios.defaults.baseURL = import.meta.env.VITE_API_BASE_URL as string;
-// Fetch all scenarios
-export const getScenarios = async (): Promise<Scenario[]> => {
-  const response = await axios.get<Scenario[]>(API_BASE_URL);
+
+// Fetch all scenarios with filters and pagination
+export const getScenarios = async (params: {
+  search?: string;
+  fromDate?: string;
+  toDate?: string;
+  status?: string;
+  sort?: string;
+  page?: number;
+  itemsPerPage?: number;
+}): Promise<{ scenarios: Scenario[]; totalItems: number }> => {
+  const response = await axios.get<{ scenarios: Scenario[]; totalItems: number }>(API_BASE_URL, { params });
   return response.data;
 };
 

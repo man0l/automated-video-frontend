@@ -4,7 +4,6 @@ import MultiStepForm from './components/form/MultistepForm';
 import useScenario from './hooks/useScenario';
 import Modal from '../../components/Modal';
 import './Scenario.scss';
-import 'tailwindcss/tailwind.css';
 
 const Scenario: React.FC = () => {
   const { scenarios, addScenario } = useScenario();

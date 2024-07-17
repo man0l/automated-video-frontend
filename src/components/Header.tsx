@@ -11,7 +11,8 @@ const Header: React.FC = () => {
           <ul className="flex space-x-4">
             <li><a href="/" className="hover:text-gray-300">Home</a></li>
             <li><a href="/projects" className="hover:text-gray-300">Projects</a></li>
-            <li><a href="/scenarios" className="hover:text-gray-300">Scenarios</a></li> {/* New link to Scenarios */}
+            <li><a href="/scenarios" className="hover:text-gray-300">Scenarios</a></li>
+            <li><a href="/templates" className="hover:text-gray-300">Templates</a></li>
           </ul>
         </nav>
       </div>

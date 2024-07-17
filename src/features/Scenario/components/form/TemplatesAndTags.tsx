@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
-import { fetchTemplates, createTemplate } from '../../services/templateService';
+import { getTemplates, createTemplate } from '../../services/templateService';
 import Modal from '../../../../components/Modal';
 import toast from 'react-hot-toast';
 
@@ -19,8 +19,12 @@ const TemplatesAndTags: React.FC<TemplatesAndTagsProps> = ({ data, onNext, onBac
 
   useEffect(() => {
     const loadTemplates = async () => {
-      const fetchedTemplates = await fetchTemplates();
-      setTemplates(fetchedTemplates);
+      const fetchedTemplates = await getTemplates({
+        sort: 'desc',
+        page: 1,
+        itemsPerPage: 100,
+      });
+      setTemplates(fetchedTemplates.templates);
     };
 
     loadTemplates();

@@ -1,35 +1,33 @@
-// src/services/templateService.ts
 import axios from 'axios';
+import { Template, CreateTemplatePayload, UpdateTemplatePayload } from '../Template.types';
 
 axios.defaults.baseURL = import.meta.env.VITE_API_BASE_URL as string;
 
-export const fetchTemplates = async () => {
-  try {
-    const response = await axios.get('/api/templates'); // Update with your actual API endpoint
-    return response.data || [];
-  } catch (error) {
-    console.error('Failed to fetch templates', error);
-    return [];
-  }
+export const getTemplates = async (params: {
+  search?: string;
+  sort?: string;
+  page?: number;
+  itemsPerPage?: number;
+}): Promise<{ templates: Template[]; totalItems: number }> => {
+  const response = await axios.get<{ templates: Template[]; totalItems: number }>('/api/templates', { params });
+  return response.data;
 };
 
-export const createTemplate = async (template: { title: string, content: string }) => {
-  try {
-    const response = await axios.post('/api/templates', template); // Update with your actual API endpoint
-    return response.data;
-  } catch (error) {
-    console.error('Failed to create template', error);
-    throw error;
-  }
+export const getTemplateById = async (id: string): Promise<Template> => {
+  const response = await axios.get<Template>(`/api/templates/${id}`);
+  return response.data;
 };
 
+export const createTemplate = async (template: CreateTemplatePayload): Promise<Template> => {
+  const response = await axios.post<Template>('/api/templates', template);
+  return response.data;
+};
 
-export const fetchTemplateById = async (id: string) => {
-  try {
-    const response = await axios.get(`/api/templates/${id}`); // Update with your actual API endpoint
-    return response.data;
-  } catch (error) {
-    console.error('Failed to fetch template', error);
-    throw error;
-  }
-}
+export const updateTemplate = async (id: string, template: UpdateTemplatePayload): Promise<Template> => {
+  const response = await axios.put<Template>(`/api/templates/${id}`, template);
+  return response.data;
+};
+
+export const deleteTemplate = async (id: string): Promise<void> => {
+  await axios.delete(`/api/templates/${id}`);
+};

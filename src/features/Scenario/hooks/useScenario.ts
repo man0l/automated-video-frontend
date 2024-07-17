@@ -1,21 +1,34 @@
 import { useState, useEffect } from 'react';
 import { getScenarios, createScenario, updateScenario, deleteScenario } from '../services/scenarioService';
 import { Scenario, CreateScenarioPayload, UpdateScenarioPayload } from '../Scenario.types';
+import { useDebounce } from '../../../hooks/useDebounce';
 
 const useScenario = () => {
   const [scenarios, setScenarios] = useState<Scenario[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [filters, setFilters] = useState({ search: '', fromDate: '', toDate: '', status: '', sort: 'desc' });
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [totalItems, setTotalItems] = useState(0);
+
+  // Debounce filters
+  const debouncedFilters = useDebounce(filters, 500);
 
   useEffect(() => {
     fetchScenarios();
-  }, []);
+  }, [debouncedFilters, currentPage, itemsPerPage]);
 
   const fetchScenarios = async () => {
     try {
       setLoading(true);
-      const data = await getScenarios();
-      setScenarios(Array.isArray(data) ? data : []);
+      const data = await getScenarios({
+        ...debouncedFilters,
+        page: currentPage,
+        itemsPerPage,
+      });
+      setScenarios(Array.isArray(data.scenarios) ? data.scenarios : []);
+      setTotalItems(data.totalItems || 0);
     } catch (err) {
       setError(err.message);
       setScenarios([]); // Ensure scenarios is an array even if there is an error
@@ -51,7 +64,21 @@ const useScenario = () => {
     }
   };
 
-  return { scenarios, loading, error, addScenario, editScenario, removeScenario };
+  return {
+    scenarios,
+    loading,
+    error,
+    filters,
+    setFilters,
+    currentPage,
+    setCurrentPage,
+    itemsPerPage,
+    setItemsPerPage,
+    totalItems,
+    addScenario,
+    editScenario,
+    removeScenario,
+  };
 };
 
 export default useScenario;
